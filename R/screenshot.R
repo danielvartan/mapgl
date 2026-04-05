@@ -9,8 +9,10 @@
 #' @param filename Character string. The output file path. Defaults to
 #'   `"map.png"`. If the filename does not end in `.png`, the extension is
 #'   appended automatically.
-#' @param width Integer. The width of the map viewport in pixels.
-#' @param height Integer. The height of the map viewport in pixels.
+#' @param width Integer. The width of the map viewport in pixels. Always
+#'   overrides any `width` configured when the map widget was created.
+#' @param height Integer. The height of the map viewport in pixels. Always
+#'   overrides any `height` configured when the map widget was created.
 #' @param include_legend Logical. Include the legend in the output? Default
 #'   `TRUE`.
 #' @param hide_controls Logical. Hide navigation and other interactive controls?
@@ -63,17 +65,17 @@
 #' save_map(map, "data_only.png", basemap_color = "white")
 #' }
 save_map <- function(
-    map,
-    filename = "map.png",
-    width = 900,
-    height = 500,
-    include_legend = TRUE,
-    hide_controls = TRUE,
-    include_scale_bar = TRUE,
-    basemap_color = NULL,
-    image_scale = 1,
-    background = "white",
-    delay = NULL
+  map,
+  filename = "map.png",
+  width = 900,
+  height = 500,
+  include_legend = TRUE,
+  hide_controls = TRUE,
+  include_scale_bar = TRUE,
+  basemap_color = NULL,
+  image_scale = 1,
+  background = "white",
+  delay = NULL
 ) {
   check_installed("chromote", reason = "to render static map screenshots")
   check_installed("httpuv", reason = "to serve the map HTML over HTTP")
@@ -87,6 +89,13 @@ save_map <- function(
     map$x$additional_params <- list()
   }
   map$x$additional_params$preserveDrawingBuffer <- TRUE
+
+  width_px <- as.integer(width)
+  height_px <- as.integer(height)
+
+  # Always override widget dimensions used by saveWidget()
+  map$width <- paste0(width_px, "px")
+  map$height <- paste0(height_px, "px")
 
   # Save widget to temp directory
   tmp_dir <- tempfile("mapgl_")
@@ -278,8 +287,8 @@ save_map <- function(
   url <- paste0("http://127.0.0.1:", port, "/map.html")
 
   b <- chromote::ChromoteSession$new(
-    width = as.integer(width),
-    height = as.integer(height)
+    width = width_px,
+    height = height_px
   )
   on.exit(b$close(), add = TRUE)
 
@@ -290,8 +299,8 @@ save_map <- function(
   if (use_native_screenshot && !identical(image_scale, 1)) {
     try(
       b$Emulation$setDeviceMetricsOverride(
-        width = as.integer(width),
-        height = as.integer(height),
+        width = width_px,
+        height = height_px,
         deviceScaleFactor = image_scale,
         mobile = FALSE
       ),
@@ -359,16 +368,16 @@ save_map <- function(
 #' print_map(map, width = 1200, height = 800, image_scale = 2)
 #' }
 print_map <- function(
-    map,
-    width = 900,
-    height = 500,
-    include_legend = TRUE,
-    hide_controls = TRUE,
-    include_scale_bar = TRUE,
-    basemap_color = NULL,
-    image_scale = 1,
-    background = "white",
-    delay = NULL
+  map,
+  width = 900,
+  height = 500,
+  include_legend = TRUE,
+  hide_controls = TRUE,
+  include_scale_bar = TRUE,
+  basemap_color = NULL,
+  image_scale = 1,
+  background = "white",
+  delay = NULL
 ) {
   if (isTRUE(getOption("knitr.in.progress"))) {
     # Save to knitr's figure directory so paths resolve in rendered output
